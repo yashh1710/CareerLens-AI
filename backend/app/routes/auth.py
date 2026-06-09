@@ -1,3 +1,10 @@
+from app.utils.security import verify_token
+from app.utils.security import oauth2_scheme
+
+from jose import JWTError
+from fastapi import Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer
+
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import HTTPException
@@ -86,4 +93,38 @@ def login_user(
     return {
         "access_token": access_token,
         "token_type": "bearer"
+    }
+@router.get("/me")
+def get_current_user(
+    token: str = Depends(oauth2_scheme)
+):
+
+    email = verify_token(token)
+
+    if not email:
+
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid token"
+        )
+
+    return {
+        "email": email
+    }
+@router.get("/me")
+def get_current_user(
+    token: str = Depends(oauth2_scheme)
+):
+
+    email = verify_token(token)
+
+    if not email:
+
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid token"
+        )
+
+    return {
+        "email": email
     }

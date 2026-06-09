@@ -1,17 +1,24 @@
 from datetime import datetime, timedelta
-from jose import jwt
+from jose import jwt, JWTError
 from passlib.context import CryptContext
+from fastapi.security import OAuth2PasswordBearer
 
 SECRET_KEY = "careerlens_secret_key"
 ALGORITHM = "HS256"
+
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="auth/login"
+)
 
 pwd_context = CryptContext(
     schemes=["bcrypt"],
     deprecated="auto"
 )
 
+
 def hash_password(password):
     return pwd_context.hash(password)
+
 
 def verify_password(
     plain_password,
@@ -21,6 +28,7 @@ def verify_password(
         plain_password,
         hashed_password
     )
+
 
 def create_access_token(data: dict):
 
@@ -37,3 +45,22 @@ def create_access_token(data: dict):
         SECRET_KEY,
         algorithm=ALGORITHM
     )
+
+
+def verify_token(token: str):
+
+    try:
+
+        payload = jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM]
+        )
+
+        email = payload.get("sub")
+
+        return email
+
+    except JWTError:
+
+        return None
