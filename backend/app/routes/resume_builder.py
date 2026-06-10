@@ -1,0 +1,387 @@
+from app.models.resume_builder import Skill
+from app.models.resume_builder import Education
+from app.models.resume_builder import Project
+from app.models.resume_builder import Experience
+from app.models.resume_builder import Certification
+
+from fastapi import APIRouter
+from fastapi import Depends
+
+from sqlalchemy.orm import Session
+
+from app.config.database import get_db
+
+from app.models.resume_builder import ResumeBuilder
+
+from fastapi import HTTPException
+
+from app.models.resume_builder import Skill
+from app.schemas.skill import SkillCreate
+
+from app.models.resume_builder import Education
+from app.schemas.education import EducationCreate
+
+from app.models.resume_builder import Project
+from app.schemas.project import ProjectCreate
+
+from app.models.resume_builder import Certification
+from app.schemas.certification import CertificationCreate
+
+from app.models.resume_builder import Experience
+from app.schemas.experience import ExperienceCreate
+
+from app.schemas.resume_builder import (
+    ResumeBuilderCreate
+)
+
+router = APIRouter(
+    prefix="/resume-builder",
+    tags=["Resume Builder"]
+)
+@router.post("/")
+def create_resume(
+    resume: ResumeBuilderCreate,
+    db: Session = Depends(get_db)
+):
+
+    new_resume = ResumeBuilder(
+
+        user_id=resume.user_id,
+
+        full_name=resume.full_name,
+
+        email=resume.email,
+
+        phone=resume.phone,
+
+        linkedin=resume.linkedin,
+
+        github=resume.github,
+
+        summary=resume.summary
+    )
+
+    db.add(new_resume)
+
+    db.commit()
+
+    db.refresh(new_resume)
+
+    return {
+        "message":
+        "Resume created successfully",
+
+        "resume_id":
+        new_resume.id
+    }
+@router.get("/{resume_id}")
+def get_resume(
+    resume_id: int,
+    db: Session = Depends(get_db)
+):
+
+    resume = db.query(
+        ResumeBuilder
+    ).filter(
+        ResumeBuilder.id == resume_id
+    ).first()
+
+    if not resume:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Resume not found"
+        )
+
+    return resume
+@router.put("/{resume_id}")
+def update_resume(
+    resume_id: int,
+    updated_resume: ResumeBuilderCreate,
+    db: Session = Depends(get_db)
+):
+
+    resume = db.query(
+        ResumeBuilder
+    ).filter(
+        ResumeBuilder.id == resume_id
+    ).first()
+
+    if not resume:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Resume not found"
+        )
+
+    resume.full_name = updated_resume.full_name
+    resume.email = updated_resume.email
+    resume.phone = updated_resume.phone
+    resume.linkedin = updated_resume.linkedin
+    resume.github = updated_resume.github
+    resume.summary = updated_resume.summary
+
+    db.commit()
+
+    return {
+        "message": "Resume updated successfully"
+    }
+@router.post("/{resume_id}/skill")
+def add_skill(
+    resume_id: int,
+    skill: SkillCreate,
+    db: Session = Depends(get_db)
+):
+
+    new_skill = Skill(
+        resume_id=resume_id,
+        skill_name=skill.skill_name
+    )
+
+    db.add(new_skill)
+
+    db.commit()
+
+    db.refresh(new_skill)
+
+    return {
+        "message": "Skill added successfully"
+    }
+@router.get("/{resume_id}/skills")
+def get_skills(
+    resume_id: int,
+    db: Session = Depends(get_db)
+):
+
+    skills = db.query(
+        Skill
+    ).filter(
+        Skill.resume_id == resume_id
+    ).all()
+
+    return skills
+@router.post("/{resume_id}/education")
+def add_education(
+    resume_id: int,
+    education: EducationCreate,
+    db: Session = Depends(get_db)
+):
+
+    new_education = Education(
+
+        resume_id=resume_id,
+
+        college=education.college,
+
+        degree=education.degree,
+
+        cgpa=education.cgpa,
+
+        year=education.year
+    )
+
+    db.add(new_education)
+
+    db.commit()
+
+    db.refresh(new_education)
+
+    return {
+        "message":
+        "Education added successfully"
+    }
+@router.get("/{resume_id}/education")
+def get_education(
+    resume_id: int,
+    db: Session = Depends(get_db)
+):
+
+    education = db.query(
+        Education
+    ).filter(
+        Education.resume_id == resume_id
+    ).all()
+
+    return education
+@router.post("/{resume_id}/project")
+def add_project(
+    resume_id: int,
+    project: ProjectCreate,
+    db: Session = Depends(get_db)
+):
+
+    new_project = Project(
+
+        resume_id=resume_id,
+
+        title=project.title,
+
+        description=project.description,
+
+        tech_stack=project.tech_stack,
+
+        github_link=project.github_link
+    )
+
+    db.add(new_project)
+
+    db.commit()
+
+    db.refresh(new_project)
+
+    return {
+        "message":
+        "Project added successfully"
+    }
+@router.get("/{resume_id}/projects")
+def get_projects(
+    resume_id: int,
+    db: Session = Depends(get_db)
+):
+
+    projects = db.query(
+        Project
+    ).filter(
+        Project.resume_id == resume_id
+    ).all()
+
+    return projects
+@router.post("/{resume_id}/certification")
+def add_certification(
+    resume_id: int,
+    certification: CertificationCreate,
+    db: Session = Depends(get_db)
+):
+
+    new_certification = Certification(
+
+        resume_id=resume_id,
+
+        certificate_name=certification.certificate_name,
+
+        issuer=certification.issuer,
+
+        year=certification.year
+    )
+
+    db.add(new_certification)
+
+    db.commit()
+
+    db.refresh(new_certification)
+
+    return {
+        "message": "Certification added successfully"
+    }
+@router.get("/{resume_id}/certifications")
+def get_certifications(
+    resume_id: int,
+    db: Session = Depends(get_db)
+):
+
+    certifications = db.query(
+        Certification
+    ).filter(
+        Certification.resume_id == resume_id
+    ).all()
+
+    return certifications
+@router.post("/{resume_id}/experience")
+def add_experience(
+    resume_id: int,
+    experience: ExperienceCreate,
+    db: Session = Depends(get_db)
+):
+
+    new_experience = Experience(
+
+        resume_id=resume_id,
+
+        company=experience.company,
+
+        role=experience.role,
+
+        duration=experience.duration,
+
+        description=experience.description
+    )
+
+    db.add(new_experience)
+
+    db.commit()
+
+    db.refresh(new_experience)
+
+    return {
+        "message": "Experience added successfully"
+    }
+@router.get("/{resume_id}/experience")
+def get_experience(
+    resume_id: int,
+    db: Session = Depends(get_db)
+):
+
+    experience = db.query(
+        Experience
+    ).filter(
+        Experience.resume_id == resume_id
+    ).all()
+
+    return experience
+@router.get("/{resume_id}/complete")
+def get_complete_resume(
+    resume_id: int,
+    db: Session = Depends(get_db)
+):
+
+    resume = db.query(
+        ResumeBuilder
+    ).filter(
+        ResumeBuilder.id == resume_id
+    ).first()
+
+    if not resume:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Resume not found"
+        )
+
+    skills = db.query(
+        Skill
+    ).filter(
+        Skill.resume_id == resume_id
+    ).all()
+
+    education = db.query(
+        Education
+    ).filter(
+        Education.resume_id == resume_id
+    ).all()
+
+    projects = db.query(
+        Project
+    ).filter(
+        Project.resume_id == resume_id
+    ).all()
+
+    experience = db.query(
+        Experience
+    ).filter(
+        Experience.resume_id == resume_id
+    ).all()
+
+    certifications = db.query(
+        Certification
+    ).filter(
+        Certification.resume_id == resume_id
+    ).all()
+
+    return {
+        "resume": resume,
+        "skills": skills,
+        "education": education,
+        "projects": projects,
+        "experience": experience,
+        "certifications": certifications
+    }
