@@ -8,18 +8,18 @@ from app.routes.auth import router
 from app.models.resume_builder import ResumeBuilder
 from app.models.resume_builder import Education
 from app.models.resume_builder import Project
-
 from app.models.resume_builder import Skill
-
 from app.models.resume_builder import Experience
-
-
 from app.models.resume_builder import Certification
 
-from app.models.resume_builder import Experience
+from app.models.resume_upload import ResumeUpload
 
 from app.routes.resume_builder import (
     router as resume_builder_router
+)
+
+from app.routes.resume_upload import (
+    router as resume_upload_router
 )
 
 app = FastAPI(
@@ -36,6 +36,9 @@ app.include_router(
     resume_builder_router
 )
 
+app.include_router(
+    resume_upload_router
+)
 
 @app.get("/")
 def home():
