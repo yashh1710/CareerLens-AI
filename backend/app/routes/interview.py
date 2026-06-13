@@ -6,9 +6,12 @@ from sqlalchemy.orm import Session
 
 from app.config.database import get_db
 
+import json
+
 from app.models.interview import (
     InterviewSession,
-    InterviewAnswer
+    InterviewAnswer,
+    InterviewMonitoring
 )
 
 from app.models.resume_builder import (
@@ -19,6 +22,10 @@ from app.models.resume_builder import (
 from app.schemas.interview import (
     InterviewStart,
     InterviewAnswerInput
+)
+
+from app.schemas.interview_monitor import (
+    InterviewMonitorCreate
 )
 
 from app.services.gemini_service import (
@@ -106,7 +113,15 @@ def submit_answer(
 
         score=result["score"],
 
-        feedback=result["feedback"]
+        feedback=result["feedback"],
+
+        strengths=json.dumps(
+            result["strengths"]
+        ),
+
+        improvements=json.dumps(
+            result["improvements"]
+        )
     )
 
     db.add(answer_record)
@@ -154,9 +169,31 @@ def interview_report(
 
     total_score = 0
 
+    strengths = []
+
+    improvements = []
+
     for answer in answers:
 
         total_score += answer.score
+
+        try:
+
+            strengths.extend(
+                json.loads(
+                    answer.strengths
+                )
+            )
+
+            improvements.extend(
+                json.loads(
+                    answer.improvements
+                )
+            )
+
+        except:
+
+            pass
 
     overall_score = int(
         total_score /
@@ -164,34 +201,24 @@ def interview_report(
         * 10
     )
 
-    strengths = []
+    monitoring_events = db.query(
+        InterviewMonitoring
+    ).filter(
+        InterviewMonitoring.session_id == session_id
+    ).all()
 
-    improvements = []
+    monitoring_summary = []
 
-    if overall_score >= 80:
+    for event in monitoring_events:
 
-        strengths.append(
-            "Strong interview performance"
-        )
+        monitoring_summary.append(
+            {
+                "event_type":
+                event.event_type,
 
-    elif overall_score >= 60:
-
-        strengths.append(
-            "Good communication skills"
-        )
-
-        improvements.append(
-            "Add more technical depth"
-        )
-
-    else:
-
-        improvements.append(
-            "Improve technical explanations"
-        )
-
-        improvements.append(
-            "Practice interview questions"
+                "details":
+                event.details
+            }
         )
 
     return {
@@ -206,8 +233,48 @@ def interview_report(
         len(answers),
 
         "strengths":
-        strengths,
+        list(
+            set(strengths)
+        ),
 
         "improvements":
-        improvements
+        list(
+            set(improvements)
+        ),
+
+        "monitoring_events":
+        monitoring_summary
+    }
+
+
+@router.post("/monitor")
+def monitor_event(
+
+    data: InterviewMonitorCreate,
+
+    db: Session = Depends(get_db)
+):
+
+    event = InterviewMonitoring(
+
+        session_id=data.session_id,
+
+        event_type=data.event_type,
+
+        details=data.details
+    )
+
+    db.add(event)
+
+    db.commit()
+
+    db.refresh(event)
+
+    return {
+
+        "message":
+        "Monitoring event saved",
+
+        "event_id":
+        event.id
     }

@@ -21,6 +21,10 @@ from app.models.resume_upload import ResumeUpload
 from app.models.interview import InterviewSession
 from app.models.interview import InterviewAnswer
 
+from app.models.interview import InterviewSession
+from app.models.interview import InterviewAnswer
+from app.models.interview import InterviewMonitoring
+
 # Resume Builder Routes
 from app.routes.resume_builder import (
     router as resume_builder_router

@@ -1,7 +1,7 @@
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import String
-from sqlalchemy import ForeignKey
+from sqlalchemy import Text
 
 from app.config.database import Base
 
@@ -27,17 +27,32 @@ class InterviewAnswer(Base):
         primary_key=True
     )
 
-    session_id = Column(
-        Integer,
-        ForeignKey(
-            "interview_sessions.id"
-        )
-    )
+    session_id = Column(Integer)
 
-    question = Column(String)
+    question = Column(Text)
 
-    answer = Column(String)
+    answer = Column(Text)
 
     score = Column(Integer)
 
-    feedback = Column(String)
+    feedback = Column(Text)
+
+    strengths = Column(Text)
+
+    improvements = Column(Text)
+
+
+class InterviewMonitoring(Base):
+
+    __tablename__ = "interview_monitoring"
+
+    id = Column(
+        Integer,
+        primary_key=True
+    )
+
+    session_id = Column(Integer)
+
+    event_type = Column(String)
+
+    details = Column(Text)
