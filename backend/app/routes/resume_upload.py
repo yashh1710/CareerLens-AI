@@ -8,6 +8,9 @@ from sqlalchemy.orm import Session
 from app.config.database import get_db
 from app.models.resume_upload import ResumeUpload
 
+from app.services.resume_analyzer import analyze_resume
+from fastapi import HTTPException
+
 import fitz
 import shutil
 import os
@@ -93,4 +96,35 @@ async def upload_resume(
 
         "preview":
         text[:500]
+    }
+@router.get("/analysis/{resume_upload_id}")
+def analyze_uploaded_resume(
+    resume_upload_id: int,
+    db: Session = Depends(get_db)
+):
+
+    resume = db.query(
+        ResumeUpload
+    ).filter(
+        ResumeUpload.id == resume_upload_id
+    ).first()
+
+    if not resume:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Resume not found"
+        )
+
+    result = analyze_resume(
+        resume.extracted_text
+    )
+
+    return {
+
+        "resume_id": resume.id,
+
+        "file_name": resume.file_name,
+
+        "analysis": result
     }

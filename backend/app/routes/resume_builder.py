@@ -15,10 +15,8 @@ from app.models.resume_builder import ResumeBuilder
 
 from fastapi import HTTPException
 
-from app.models.resume_builder import Skill
 from app.schemas.skill import SkillCreate
 
-from app.models.resume_builder import Education
 from app.schemas.education import EducationCreate
 
 from app.models.resume_builder import Project
@@ -29,6 +27,19 @@ from app.schemas.certification import CertificationCreate
 
 from app.models.resume_builder import Experience
 from app.schemas.experience import ExperienceCreate
+
+from app.services.resume_analyzer import calculate_ats_score
+from app.services.resume_analyzer import generate_suggestions
+
+from app.services.job_matcher import calculate_job_match
+
+from app.services.job_matcher import recommend_best_roles
+
+from app.schemas.job_description import JobDescriptionInput
+
+from app.services.job_matcher import (
+    match_job_description
+)
 
 from app.schemas.resume_builder import (
     ResumeBuilderCreate
@@ -385,3 +396,222 @@ def get_complete_resume(
         "experience": experience,
         "certifications": certifications
     }
+@router.get("/analysis/{resume_id}")
+def analyze_built_resume(
+    resume_id: int,
+    db: Session = Depends(get_db)
+):
+
+    resume = db.query(
+        ResumeBuilder
+    ).filter(
+        ResumeBuilder.id == resume_id
+    ).first()
+
+    if not resume:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Resume not found"
+        )
+
+    skills = db.query(
+        Skill
+    ).filter(
+        Skill.resume_id == resume_id
+    ).all()
+
+    education = db.query(
+        Education
+    ).filter(
+        Education.resume_id == resume_id
+    ).all()
+
+    projects = db.query(
+        Project
+    ).filter(
+        Project.resume_id == resume_id
+    ).all()
+
+    experience = db.query(
+        Experience
+    ).filter(
+        Experience.resume_id == resume_id
+    ).all()
+
+    certifications = db.query(
+        Certification
+    ).filter(
+        Certification.resume_id == resume_id
+    ).all()
+
+    ats_score = calculate_ats_score(
+        skills,
+        education,
+        projects,
+        experience,
+        certifications
+    )
+
+    suggestions = generate_suggestions(
+        skills,
+        projects,
+        experience,
+        certifications
+    )
+
+    return {
+
+        "resume_id": resume_id,
+
+        "full_name": resume.full_name,
+
+        "ats_score": ats_score,
+
+        "skills_count": len(skills),
+
+        "education_count": len(education),
+
+        "projects_count": len(projects),
+
+        "experience_count": len(experience),
+
+        "certifications_count": len(certifications),
+
+        "suggestions": suggestions
+    }
+@router.get("/{resume_id}/job-match/{job_role}")
+def match_resume_to_job(
+
+    resume_id: int,
+
+    job_role: str,
+
+    db: Session = Depends(get_db)
+):
+
+    resume = db.query(
+        ResumeBuilder
+    ).filter(
+        ResumeBuilder.id == resume_id
+    ).first()
+
+    if not resume:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Resume not found"
+        )
+
+    skills = db.query(
+        Skill
+    ).filter(
+        Skill.resume_id == resume_id
+    ).all()
+
+    result = calculate_job_match(
+        skills,
+        job_role
+    )
+
+    return {
+
+        "resume_id":
+        resume_id,
+
+        "job_role":
+        job_role,
+
+        "match_result":
+        result
+    }
+@router.get("/{resume_id}/career-suggestions")
+def career_suggestions(
+
+    resume_id: int,
+
+    db: Session = Depends(get_db)
+):
+
+    resume = db.query(
+        ResumeBuilder
+    ).filter(
+        ResumeBuilder.id == resume_id
+    ).first()
+
+    if not resume:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Resume not found"
+        )
+
+    skills = db.query(
+        Skill
+    ).filter(
+        Skill.resume_id == resume_id
+    ).all()
+
+    projects = db.query(
+        Project
+    ).filter(
+        Project.resume_id == resume_id
+    ).all()
+
+    experience = db.query(
+        Experience
+    ).filter(
+        Experience.resume_id == resume_id
+    ).all()
+
+    certifications = db.query(
+        Certification
+    ).filter(
+        Certification.resume_id == resume_id
+    ).all()
+
+    return recommend_best_roles(
+        skills,
+        projects,
+        experience,
+        certifications
+    )
+@router.post(
+    "/{resume_id}/job-description-match"
+)
+def job_description_match(
+
+    resume_id: int,
+
+    job_data: JobDescriptionInput,
+
+    db: Session = Depends(get_db)
+):
+
+    resume = db.query(
+        ResumeBuilder
+    ).filter(
+        ResumeBuilder.id == resume_id
+    ).first()
+
+    if not resume:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Resume not found"
+        )
+
+    skills = db.query(
+        Skill
+    ).filter(
+        Skill.resume_id == resume_id
+    ).all()
+
+    result = match_job_description(
+
+        skills,
+
+        job_data.job_description
+    )
+
+    return result
