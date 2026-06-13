@@ -21,12 +21,9 @@ from app.schemas.interview import (
     InterviewAnswerInput
 )
 
-from app.services.interview_service import (
-    evaluate_answer
-)
-
 from app.services.gemini_service import (
-    generate_ai_questions
+    generate_ai_questions,
+    evaluate_answer_ai
 )
 
 router = APIRouter(
@@ -44,7 +41,6 @@ def start_interview(
 ):
 
     session = InterviewSession(
-
         role=data.role
     )
 
@@ -93,7 +89,10 @@ def submit_answer(
     db: Session = Depends(get_db)
 ):
 
-    result = evaluate_answer(
+    result = evaluate_answer_ai(
+
+        data.question,
+
         data.answer
     )
 
@@ -122,7 +121,13 @@ def submit_answer(
         result["score"],
 
         "feedback":
-        result["feedback"]
+        result["feedback"],
+
+        "strengths":
+        result["strengths"],
+
+        "improvements":
+        result["improvements"]
     }
 
 

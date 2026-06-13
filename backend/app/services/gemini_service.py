@@ -71,3 +71,59 @@ Rules:
     ]
 
     return questions
+import json
+
+
+def evaluate_answer_ai(
+    question,
+    answer
+):
+
+    prompt = f"""
+You are an expert technical interviewer.
+
+Question:
+{question}
+
+Candidate Answer:
+{answer}
+
+Evaluate the answer.
+
+Return ONLY valid JSON in this format:
+
+{{
+    "score": 8,
+    "feedback": "Good answer",
+    "strengths": [
+        "Clear explanation"
+    ],
+    "improvements": [
+        "Add more technical depth"
+    ]
+}}
+
+Score must be between 1 and 10.
+"""
+
+    response = model.generate_content(
+        prompt
+    )
+
+    text = response.text.strip()
+
+    text = text.replace(
+        "```json",
+        ""
+    )
+
+    text = text.replace(
+        "```",
+        ""
+    )
+
+    result = json.loads(
+        text
+    )
+
+    return result
