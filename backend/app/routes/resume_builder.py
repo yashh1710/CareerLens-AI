@@ -45,6 +45,12 @@ from app.schemas.resume_builder import (
     ResumeBuilderCreate
 )
 
+from fastapi.responses import FileResponse
+
+from app.services.pdf_generator import (
+    generate_resume_pdf
+)
+
 router = APIRouter(
     prefix="/resume-builder",
     tags=["Resume Builder"]
@@ -615,3 +621,83 @@ def job_description_match(
     )
 
     return result
+@router.get("/{resume_id}/pdf")
+def download_resume_pdf(
+
+    resume_id: int,
+
+    db: Session = Depends(get_db)
+):
+
+    resume = db.query(
+        ResumeBuilder
+    ).filter(
+        ResumeBuilder.id == resume_id
+    ).first()
+
+    if not resume:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Resume not found"
+        )
+
+    skills = db.query(
+        Skill
+    ).filter(
+        Skill.resume_id == resume_id
+    ).all()
+
+    education = db.query(
+        Education
+    ).filter(
+        Education.resume_id == resume_id
+    ).all()
+
+    projects = db.query(
+        Project
+    ).filter(
+        Project.resume_id == resume_id
+    ).all()
+
+    experience = db.query(
+        Experience
+    ).filter(
+        Experience.resume_id == resume_id
+    ).all()
+
+    certifications = db.query(
+        Certification
+    ).filter(
+        Certification.resume_id == resume_id
+    ).all()
+
+    filename = (
+        f"resume_{resume_id}.pdf"
+    )
+
+    generate_resume_pdf(
+
+        filename,
+
+        resume,
+
+        skills,
+
+        education,
+
+        projects,
+
+        experience,
+
+        certifications
+    )
+
+    return FileResponse(
+
+        path=filename,
+
+        media_type="application/pdf",
+
+        filename=filename
+    )
