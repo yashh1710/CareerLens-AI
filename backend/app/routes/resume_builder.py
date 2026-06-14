@@ -50,6 +50,9 @@ from fastapi.responses import FileResponse
 from app.services.pdf_generator import (
     generate_resume_pdf
 )
+from app.services.career_coach import (
+    generate_career_coach_report
+)
 
 router = APIRouter(
     prefix="/resume-builder",
@@ -701,3 +704,107 @@ def download_resume_pdf(
 
         filename=filename
     )
+@router.get("/{resume_id}/career-roadmap")
+def career_roadmap(
+
+    resume_id: int,
+
+    db: Session = Depends(get_db)
+):
+
+    resume = db.query(
+        ResumeBuilder
+    ).filter(
+        ResumeBuilder.id == resume_id
+    ).first()
+
+    if not resume:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Resume not found"
+        )
+
+    skills = db.query(
+        Skill
+    ).filter(
+        Skill.resume_id == resume_id
+    ).all()
+
+    education = db.query(
+        Education
+    ).filter(
+        Education.resume_id == resume_id
+    ).all()
+
+    projects = db.query(
+        Project
+    ).filter(
+        Project.resume_id == resume_id
+    ).all()
+
+    experience = db.query(
+        Experience
+    ).filter(
+        Experience.resume_id == resume_id
+    ).all()
+
+    certifications = db.query(
+        Certification
+    ).filter(
+        Certification.resume_id == resume_id
+    ).all()
+
+    resume_data = {
+
+        "name":
+        resume.full_name,
+
+        "summary":
+        resume.summary,
+
+        "skills":
+        [
+            s.skill_name
+            for s in skills
+        ],
+
+        "education":
+        [
+            {
+                "college": e.college,
+                "degree": e.degree
+            }
+            for e in education
+        ],
+
+        "projects":
+        [
+            {
+                "title": p.title,
+                "tech_stack": p.tech_stack
+            }
+            for p in projects
+        ],
+
+        "experience":
+        [
+            {
+                "company": ex.company,
+                "role": ex.role
+            }
+            for ex in experience
+        ],
+
+        "certifications":
+        [
+            c.certificate_name
+            for c in certifications
+        ]
+    }
+
+    result = generate_career_coach_report(
+        resume_data
+    )
+
+    return result
