@@ -53,6 +53,18 @@ from app.services.pdf_generator import (
 from app.services.career_coach import (
     generate_career_coach_report
 )
+from app.schemas.cover_letter import (
+    CoverLetterRequest
+)
+
+from app.services.cover_letter_service import (
+    generate_cover_letter
+)
+from fastapi.responses import FileResponse
+
+from app.services.cover_letter_pdf import (
+    generate_cover_letter_pdf
+)
 
 router = APIRouter(
     prefix="/resume-builder",
@@ -808,3 +820,153 @@ def career_roadmap(
     )
 
     return result
+@router.post("/cover-letter")
+def create_cover_letter(
+
+    data: CoverLetterRequest,
+
+    db: Session = Depends(get_db)
+):
+
+    resume = db.query(
+        ResumeBuilder
+    ).filter(
+        ResumeBuilder.id == data.resume_id
+    ).first()
+
+    if not resume:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Resume not found"
+        )
+
+    skills = db.query(
+        Skill
+    ).filter(
+        Skill.resume_id == data.resume_id
+    ).all()
+
+    projects = db.query(
+        Project
+    ).filter(
+        Project.resume_id == data.resume_id
+    ).all()
+
+    resume_data = {
+
+        "name":
+        resume.full_name,
+
+        "summary":
+        resume.summary,
+
+        "skills":
+        [
+            s.skill_name
+            for s in skills
+        ],
+
+        "projects":
+        [
+            p.title
+            for p in projects
+        ]
+    }
+
+    cover_letter = generate_cover_letter(
+
+        resume_data,
+
+        data.job_role,
+
+        data.company_name
+    )
+
+    return {
+
+        "cover_letter":
+        cover_letter
+    }
+@router.post("/cover-letter/pdf")
+def download_cover_letter(
+
+    data: CoverLetterRequest,
+
+    db: Session = Depends(get_db)
+):
+
+    resume = db.query(
+        ResumeBuilder
+    ).filter(
+        ResumeBuilder.id == data.resume_id
+    ).first()
+
+    if not resume:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Resume not found"
+        )
+
+    skills = db.query(
+        Skill
+    ).filter(
+        Skill.resume_id == data.resume_id
+    ).all()
+
+    projects = db.query(
+        Project
+    ).filter(
+        Project.resume_id == data.resume_id
+    ).all()
+
+    resume_data = {
+
+        "name":
+        resume.full_name,
+
+        "summary":
+        resume.summary,
+
+        "skills":
+        [
+            s.skill_name
+            for s in skills
+        ],
+
+        "projects":
+        [
+            p.title
+            for p in projects
+        ]
+    }
+
+    cover_letter = generate_cover_letter(
+
+        resume_data,
+
+        data.job_role,
+
+        data.company_name
+    )
+
+    filename = (
+        f"cover_letter_{data.resume_id}.pdf"
+    )
+
+    generate_cover_letter_pdf(
+
+        filename,
+
+        cover_letter
+    )
+
+    return FileResponse(
+
+        path=filename,
+
+        media_type="application/pdf",
+
+        filename=filename
+    )
