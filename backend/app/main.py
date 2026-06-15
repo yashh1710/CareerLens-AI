@@ -24,6 +24,7 @@ from app.models.interview import InterviewAnswer
 from app.models.interview import InterviewSession
 from app.models.interview import InterviewAnswer
 from app.models.interview import InterviewMonitoring
+from fastapi.middleware.cors import CORSMiddleware
 
 # Resume Builder Routes
 from app.routes.resume_builder import (
@@ -44,7 +45,19 @@ from app.routes.interview import (
 app = FastAPI(
     title="CareerLens AI"
 )
+app.add_middleware(
+    CORSMiddleware,
 
+    allow_origins=[
+        "http://localhost:5173"
+    ],
+
+    allow_credentials=True,
+
+    allow_methods=["*"],
+
+    allow_headers=["*"]
+)
 # Create Database Tables
 Base.metadata.create_all(
     bind=engine
