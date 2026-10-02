@@ -238,3 +238,7 @@ backend/*.pdf
 .vscode/
 .idea/
 .DS_Store
+
+# Generated PDFs / user uploads
+backend/app/uploads/*.pdf
+backend/cover_letter_*.pdf
