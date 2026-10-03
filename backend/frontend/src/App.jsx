@@ -16,13 +16,11 @@ import ResumeAnalysis from "./pages/ResumeAnalysis"
 import JobMatching from "./pages/JobMatching"
 import CareerCoach from "./pages/CareerCoach"
 import AIInterview from "./pages/AIInterview"
+import CoverLetter from "./pages/CoverLetter"
 
 function App() {
-
   return (
-
     <BrowserRouter>
-
       <Routes>
 
         <Route
@@ -84,14 +82,15 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
-  path="/career-coach"
-  element={
-    <ProtectedRoute>
-      <CareerCoach />
-    </ProtectedRoute>
-  }
-/>
+          path="/career-coach"
+          element={
+            <ProtectedRoute>
+              <CareerCoach />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/ai-interview"
@@ -102,10 +101,17 @@ function App() {
           }
         />
 
+        <Route
+          path="/cover-letter"
+          element={
+            <ProtectedRoute>
+              <CoverLetter />
+            </ProtectedRoute>
+          }
+        />
+
       </Routes>
-
     </BrowserRouter>
-
   )
 }
 
